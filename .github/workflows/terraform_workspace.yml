@@ -55,7 +55,7 @@ jobs:
           else
             echo "::set-output name=diff::true"
           fi
-          git diff-index --quiet HEAD || git commit -m "style(terraform fmt): [BOT] terraform fmt" -a
+          git diff-index --quiet HEAD || git commit -m "style(terraform fmt): format code" -a
 
       - name: Push changes
         uses: ad-m/github-push-action@master
@@ -102,7 +102,7 @@ jobs:
           git-push: true
           git-push-user-name: "github-actions"
           git-push-user-email: "noreply@nuvibit.com"
-          git-commit-message: "docs(terraform-docs): [BOT] update README"
+          git-commit-message: "docs(terraform-docs): update README"
 
   terraform-run:
     needs: [terraform-fmt, terraform-docs]

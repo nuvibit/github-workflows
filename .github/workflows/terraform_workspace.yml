@@ -103,13 +103,16 @@ jobs:
           git-push-user-name: "github-actions"
           git-push-user-email: "noreply@nuvibit.com"
           git-commit-message: "docs(terraform-docs): [BOT] update README [skip ci]"
+      
+      - name: debug
+        run: |
+          echo ${{ toJSON(steps) }}
 
   debug:
-    needs: terraform-fmt
+    needs: [terraform-fmt, terraform-docs]
     runs-on: ubuntu-latest
     steps:
       - name: debug
-        id: debug
         run: |
           echo ${{ needs.terraform-fmt.outputs.diff_exists }}
           echo ${{ needs.terraform-docs.outputs.diff_exists }}

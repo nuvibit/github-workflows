@@ -178,7 +178,9 @@ jobs:
 
       - name: debug
         run: |
-          echo ${{ toJSON(steps) }}
+          echo ${{ steps.init.outputs.exitcode }}
+          echo ${{ steps.init.outcome }}
+          echo ${{ steps.plan.outputs.exitcode }}
           echo ${{ steps.plan.outcome }}
 
       - name: Terraform Plan Outcome

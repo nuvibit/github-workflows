@@ -15,12 +15,16 @@ on:
 jobs:
   terraform-fmt:
     runs-on: ubuntu-latest
+    outputs:
+      fmt_status: ${{ steps.fmt.outcome }}
+      diff_exists: ${{ steps.fmt_commit.outputs.diff }}
     
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GH_SA_TOKEN_RO }}
 
       - name: Terraform Format
         uses: dflook/terraform-fmt@v1
@@ -31,7 +35,13 @@ jobs:
         run: |
           git config --local user.name "github-actions"
           git config --local user.email "noreply@nuvibit.com"
-          git diff-index --quiet HEAD || git commit -m "style(terraform fmt): [BOT] terraform fmt [skip ci]" -a
+          if [[ -z $(git status -s) ]]
+          then
+            echo "::set-output name=diff::false"
+          else
+            echo "::set-output name=diff::true"
+          fi
+          git diff-index --quiet HEAD || git commit -m "style(terraform fmt): format code" -a
 
       - name: Push changes
         uses: ad-m/github-push-action@master
@@ -42,16 +52,20 @@ jobs:
   terraform-docs:
     needs: terraform-fmt
     runs-on: ubuntu-latest
+    outputs:
+      docs_status: ${{ steps.docs.outcome }}
+      diff_exists: ${{ steps.docs.outputs.num_changed > 0 }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GH_SA_TOKEN_RO }}
 
       - name: Terraform Docs
         id: docs
-        uses: terraform-docs/gh-actions@v0.10.0
+        uses: terraform-docs/gh-actions@v0.11.0
         with:
           working-dir: .
           output-file: README.md
@@ -60,10 +74,11 @@ jobs:
           git-push: true
           git-push-user-name: "github-actions"
           git-push-user-email: "noreply@nuvibit.com"
-          git-commit-message: "docs(terraform-docs): [BOT] update README [skip ci]"
+          git-commit-message: "docs(terraform-docs): update README"
 
   # terraform-test:
-  #   needs: terraform-docs
+  #   needs: [terraform-fmt, terraform-docs]
+  #   if: ${{ needs.terraform-fmt.outputs.diff_exists == 'false' && needs.terraform-docs.outputs.diff_exists == 'false' }}
   #   runs-on: ubuntu-latest
   #   env: 
   #     AWS_ACCESS_KEY: ${{ secrets.TERRATEST_AWS_ACCESS_KEY }}
@@ -120,7 +135,7 @@ jobs:
   #         go test -v -timeout 60m 2>&1 | tee >(./terratest_log_parser_linux_amd64)
 
   #     - name: Upload Terratest Results
-  #       if: always()
+  #       if: ${{ always() }}
   #       uses: actions/upload-artifact@v2
   #       with:
   #         name: Terratest Results (Terraform ${{ matrix.tf_version }} & Provider.aws ${{ matrix.aws_version_operator_name }} ${{ matrix.aws_version }})
@@ -130,7 +145,7 @@ jobs:
   publish-results:
     needs: terraform-test
     runs-on: ubuntu-latest
-    if: success() || failure()
+    if: ${{ success() || failure() }}
 
     steps:
       - name: Download Artifacts

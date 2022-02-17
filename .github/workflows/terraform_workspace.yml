@@ -176,7 +176,12 @@ jobs:
           echo "::set-output name=url::$match"
         continue-on-error: true
 
-      - name: Terraform Status
+      - name: debug
+        run: |
+          echo ${{ toJSON(steps) }}
+          echo ${{ steps.plan.outcome }}
+
+      - name: Terraform Plan Outcome
         if: ${{ steps.plan.outcome == 'failure' }}
         run: exit 1
 

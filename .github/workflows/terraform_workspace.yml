@@ -71,6 +71,39 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref }}
 
+  terraform-docs:
+    needs: terraform-fmt
+    runs-on: ubuntu-latest
+    outputs:
+      docs_status: ${{ steps.docs.outcome }}
+      diff_exists: ${{ steps.docs.outputs.num_changed > 0 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        if: ${{ github.event_name == 'push' }}
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Terraform Docs
+        id: docs
+        uses: terraform-docs/gh-actions@v0.10.0
+        with:
+          working-dir: .
+          output-file: README.md
+          output-method: inject
+          args: --sort-by required
+          git-push: true
+          git-push-user-name: "github-actions"
+          git-push-user-email: "noreply@nuvibit.com"
+          git-commit-message: "docs(terraform-docs): [BOT] update README [skip ci]"
+
   debug:
     needs: terraform-fmt
     runs-on: ubuntu-latest
@@ -79,38 +112,7 @@ jobs:
         id: debug
         run: |
           echo ${{ needs.terraform-fmt.outputs.diff_exists }}
-
-  # terraform-docs:
-  #   needs: terraform-fmt
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     docs_status: ${{ steps.docs.outcome }}
-
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       if: ${{ github.event_name == 'pull_request' }}
-  #       with:
-  #         ref: ${{ github.event.pull_request.head.ref }}
-
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       if: ${{ github.event_name == 'push' }}
-  #       with:
-  #         ref: ${{ github.ref }}
-
-  #     - name: Terraform Docs
-  #       id: docs
-  #       uses: terraform-docs/gh-actions@v0.10.0
-  #       with:
-  #         working-dir: .
-  #         output-file: README.md
-  #         output-method: inject
-  #         args: --sort-by required
-  #         git-push: true
-  #         git-push-user-name: "github-actions"
-  #         git-push-user-email: "noreply@nuvibit.com"
-  #         git-commit-message: "docs(terraform-docs): [BOT] update README [skip ci]"
+          echo ${{ needs.terraform-docs.outputs.diff_exists }}
 
   # terraform-run:
   #   needs: [terraform-fmt, terraform-docs]

@@ -176,17 +176,8 @@ jobs:
           echo "::set-output name=url::$match"
         continue-on-error: true
 
-      - name: debug
-        run: |
-          echo ${{ steps.init.outputs.exitcode }}
-          echo ${{ steps.init.outcome }}
-          echo ${{ steps.init.conclusion }}
-          echo ${{ steps.plan.outputs.exitcode }}
-          echo ${{ steps.plan.outcome }}
-          echo ${{ steps.plan.conclusion }}
-
       - name: Terraform Plan Outcome
-        if: ${{ steps.plan.outcome == 'failure' }}
+        if: ${{ steps.plan.outcome == 'failure' || steps.plan.outputs.exitcode == '1' }}
         run: exit 1
 
       - name: Terraform Apply

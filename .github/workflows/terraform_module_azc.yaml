@@ -7,10 +7,14 @@ on:
         required: true
       TF_API_TOKEN:
         required: true
-      # TERRATEST_AWS_ACCESS_KEY:
-      #   required: true
-      # TERRATEST_AWS_SECRET_ACCESS_KEY:
-      #   required: true
+      TERRATEST_ARM_CLIENT_ID:
+        required: true
+      TERRATEST_ARM_CLIENT_SECRET:
+        required: true
+      TERRATEST_ARM_SUBSCRIPTION_ID:
+        required: true
+      TERRATEST_ARM_TENANT_ID:
+        required: true
 
 jobs:
   terraform-fmt:
@@ -32,6 +36,7 @@ jobs:
           path: ./
 
       - name: Commit files
+        id: fmt_commit
         run: |
           git config --local user.name "github-actions"
           git config --local user.email "noreply@nuvibit.com"
@@ -76,71 +81,73 @@ jobs:
           git-push-user-email: "noreply@nuvibit.com"
           git-commit-message: "docs(terraform-docs): update README"
 
-  # terraform-test:
-  #   needs: [terraform-fmt, terraform-docs]
-  #   if: ${{ needs.terraform-fmt.outputs.diff_exists == 'false' && needs.terraform-docs.outputs.diff_exists == 'false' }}
-  #   runs-on: ubuntu-latest
-  #   env: 
-  #     AWS_ACCESS_KEY: ${{ secrets.TERRATEST_AWS_ACCESS_KEY }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.TERRATEST_AWS_SECRET_ACCESS_KEY }}
+  terraform-test:
+    needs: [terraform-fmt, terraform-docs]
+    if: ${{ needs.terraform-fmt.outputs.diff_exists == 'false' && needs.terraform-docs.outputs.diff_exists == 'false' }}
+    runs-on: ubuntu-latest
+    env: 
+      ARM_CLIENT_ID: ${{ secrets.TERRATEST_ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.TERRATEST_ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.TERRATEST_ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.TERRATEST_ARM_TENANT_ID }}
 
-  #   strategy:
-  #     max-parallel: 1
-  #     matrix:
-  #       include:
-  #         - tf_version: "0.15.0"
-  #           aws_version_operator: "~>"
-  #           aws_version: "3.15"
-  #           aws_version_operator_name: "rightmost"
-            
-  #         - tf_version: "1.0.1"
-  #           aws_version_operator: ">="
-  #           aws_version: "3.15"
-  #           aws_version_operator_name: "greater-than-or-equal"
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - tf_version: "0.15.0"
+            azc_version_operator: "~>"
+            azc_version: "2.91.0"
+            azc_version_operator_name: "rightmost"
 
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       with:
-  #         ref: ${{ github.event.pull_request.head.ref }}
+          - tf_version: "1.1.6"
+            azc_version_operator: ">="
+            azc_version: "2.91.0"
+            azc_version_operator_name: "greater-than-or-equal"
 
-  #     - name: Setup Go
-  #       uses: actions/setup-go@v2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
-  #     - name: Setup Dependencies
-  #       working-directory: ./test
-  #       run:  |
-  #         go get -v -t -d
-  #         wget https://github.com/gruntwork-io/terratest/releases/download/v0.35.1/terratest_log_parser_linux_amd64
-  #         chmod +x terratest_log_parser_linux_amd64
+      - name: Setup Go
+        uses: actions/setup-go@v2
 
-  #     - name: Setup Terraform
-  #       uses: hashicorp/setup-terraform@v1
-  #       with:
-  #         terraform_version: ${{ matrix.tf_version }}
-  #         terraform_wrapper: false
-  #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - name: Setup Dependencies
+        working-directory: ./test
+        run:  |
+          go get -v -t -d
+          wget https://github.com/gruntwork-io/terratest/releases/download/v0.35.1/terratest_log_parser_linux_amd64
+          chmod +x terratest_log_parser_linux_amd64
 
-  #     - name: Configure Provider
-  #       working-directory: ./examples
-  #       run: |
-  #         for d in */
-  #         do
-  #           sed -i 's/^\(\s+version\s+=\s*"\).*\("\s*\)$/\1${{ matrix.aws_version_operator }} ${{ matrix.aws_version }}\2"/g' "$d/main.tf"
-  #         done
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: ${{ matrix.tf_version }}
+          terraform_wrapper: false
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-  #     - name: Run Terratest
-  #       working-directory: ./test
-  #       run: |
-  #         go test -v -timeout 60m 2>&1 | tee >(./terratest_log_parser_linux_amd64)
+      - name: Configure Provider
+        working-directory: ./examples
+        run: |
+          for d in */
+          do
+            sed -i 's/^\(\s+version\s+=\s*"\).*\("\s*\)$/\1${{ matrix.azc_version_operator }} ${{ matrix.azc_version }}\2"/g' "$d/main.tf"
+          done
 
-  #     - name: Upload Terratest Results
-  #       if: ${{ always() }}
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: Terratest Results (Terraform ${{ matrix.tf_version }} & Provider.aws ${{ matrix.aws_version_operator_name }} ${{ matrix.aws_version }})
-  #         path: |
-  #           **/report.xml
+      - name: Run Terratest
+        working-directory: ./test
+        run: |
+          go test -v -timeout 60m 2>&1 | tee >(./terratest_log_parser_linux_amd64)
+
+      - name: Upload Terratest Results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: Terratest Results (Terraform ${{ matrix.tf_version }} & Provider.aws ${{ matrix.azc_version_operator_name }} ${{ matrix.azc_version }})
+          path: |
+            **/report.xml
 
   publish-results:
     needs: [terraform-fmt, terraform-docs, terraform-test]

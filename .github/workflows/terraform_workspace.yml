@@ -111,6 +111,8 @@ jobs:
       - name: debug
         run: |
           echo "${{ toJSON(steps) }}"
+          echo "${{ toJSON(steps.docs.outputs) }}"
+          echo "${{ toJSON(steps.docs.outputs.num_changed) }}"
           echo "${{ needs.terraform-fmt.outputs.diff_exists }}"
           echo "${{ needs.terraform-docs.outputs.diff_exists }}"
 

@@ -143,7 +143,7 @@ jobs:
   #           **/report.xml
 
   publish-results:
-    needs: terraform-test
+    needs: [terraform-fmt, terraform-docs, terraform-run]
     runs-on: ubuntu-latest
     if: ${{ success() || failure() }}
 

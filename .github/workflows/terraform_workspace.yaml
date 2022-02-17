@@ -187,20 +187,11 @@ jobs:
         run: terraform apply -auto-approve
 
   publish-results:
-    needs: terraform-run
+    needs: [terraform-fmt, terraform-docs, terraform-run]
     runs-on: ubuntu-latest
     if: ${{ success() || failure() }}
 
     steps:
-      - name: debug
-        run: |
-          echo "${{ toJSON(needs.terraform-fmt) }}"
-          echo "${{ toJSON(needs.terraform-docs) }}"
-          echo "${{ needs.terraform-fmt.outputs.fmt_status }}"
-          echo "${{ needs.terraform-docs.outputs.docs_status }}"
-          echo "${{ needs.terraform-run.outputs.init_status }}"
-          echo "${{ needs.terraform-run.outputs.plan_status }}"
-
       - name: Get Check Run IDs
         if: ${{ github.event_name == 'pull_request' }}
         run: |

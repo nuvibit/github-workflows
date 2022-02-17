@@ -3,8 +3,6 @@ name: TERRAFORM WORKSPACE
 on:
   workflow_call:
     secrets:
-      GITHUB_TOKEN:
-        required: true
       GH_SA_TOKEN_RO:
         required: true
       TF_API_TOKEN:

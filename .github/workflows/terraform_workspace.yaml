@@ -120,7 +120,6 @@ jobs:
     outputs:
       tf_cloud_url: ${{ steps.tfc.outputs.url }}
       init_status: ${{ steps.init.outcome }}
-      plan_status: ${{ steps.plan.outcome }}
       plan_status: ${{ steps.plan.outputs.exitcode == '1' || steps.plan.outcome }}
       tf_apply_branch: ${{ steps.tf_apply_branch.outputs.branch }}
 

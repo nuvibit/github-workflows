@@ -110,6 +110,7 @@ jobs:
 
   debug:
     needs: [terraform-fmt, terraform-docs]
+    runs-on: ubuntu-latest
     steps:
       - name: debug
         run: |

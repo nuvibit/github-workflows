@@ -107,6 +107,11 @@ jobs:
           git-push-user-name: "github-actions"
           git-push-user-email: "noreply@nuvibit.com"
           git-commit-message: "docs(terraform-docs): update README"
+      
+      - name: debug
+        run: |
+          echo "${{ needs.terraform-fmt.outputs.diff_exists }}"
+          echo "${{ needs.terraform-docs.outputs.diff_exists }}"
 
   terraform-run:
     needs: [terraform-fmt, terraform-docs]

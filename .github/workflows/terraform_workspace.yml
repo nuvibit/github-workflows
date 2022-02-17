@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       docs_status: ${{ steps.docs.outcome }}
-      diff_exists: ${{ steps.docs.outputs.num_changed > 0 }}
+      diff_exists: ${{ steps.docs.outputs.num_changed }}
 
     steps:
       - name: Checkout

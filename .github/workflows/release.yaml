@@ -1,9 +1,10 @@
 name: RELEASE
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    secrets:
+      GH_SA_TOKEN_RO:
+        required: true
 
 jobs:
   release:

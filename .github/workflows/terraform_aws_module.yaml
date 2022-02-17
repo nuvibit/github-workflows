@@ -2,6 +2,15 @@ name: TERRAFORM MODULE
 
 on:
   workflow_call:
+    secrets:
+      GH_SA_TOKEN_RO:
+        required: true
+      TF_API_TOKEN:
+        required: true
+      TERRATEST_AWS_ACCESS_KEY:
+        required: true
+      TERRATEST_AWS_SECRET_ACCESS_KEY:
+        required: true
 
 jobs:
   terraform-fmt:

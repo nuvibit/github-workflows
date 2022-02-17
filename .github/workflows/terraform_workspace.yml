@@ -110,6 +110,7 @@ jobs:
       
       - name: debug
         run: |
+          echo "${{ toJSON(steps) }}"
           echo "${{ needs.terraform-fmt.outputs.diff_exists }}"
           echo "${{ needs.terraform-docs.outputs.diff_exists }}"
 

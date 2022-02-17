@@ -66,9 +66,9 @@ jobs:
       - name: debug
         id: debug
         run: |
-          echo ${{ steps.docs.outputs }}
-          echo ${{ steps.docs.conclusion }}
-          echo ${{ steps.docs.outcome }}
+          echo ${{ steps.fmt.outputs }}
+          echo ${{ steps.fmt.conclusion }}
+          echo ${{ steps.fmt.outcome }}
 
   terraform-docs:
     needs: terraform-fmt

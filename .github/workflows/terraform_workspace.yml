@@ -14,6 +14,7 @@ jobs:
     outputs:
       fmt_status: ${{ steps.fmt.outcome }}
       terraform_options: ${{ steps.terraform_json.outputs.options }}
+      diff_exists: false
 
     steps:
       - name: Checkout
@@ -47,6 +48,7 @@ jobs:
         run: |
           git config --local user.name "github-actions"
           git config --local user.email "noreply@nuvibit.com"
+          echo "::set-output name=diff_exists::true"
           git diff-index --quiet HEAD || git commit -m "style(terraform fmt): [BOT] terraform fmt [skip ci]" -a
 
       - name: Push changes
@@ -62,166 +64,168 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref }}
-      
+
+  debug:
+    needs: terraform-fmt
+    runs-on: ubuntu-latest
+    steps:
       - name: debug
         id: debug
         run: |
-          echo ${{ steps.fmt.outputs }}
-          echo ${{ steps.fmt.conclusion }}
-          echo ${{ steps.fmt.outcome }}
+          echo ${{ needs.terraform-fmt.outputs.diff_exists }}
 
-  terraform-docs:
-    needs: terraform-fmt
-    runs-on: ubuntu-latest
-    outputs:
-      docs_status: ${{ steps.docs.outcome }}
+  # terraform-docs:
+  #   needs: terraform-fmt
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     docs_status: ${{ steps.docs.outcome }}
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        if: ${{ github.event_name == 'pull_request' }}
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       with:
+  #         ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Checkout
-        uses: actions/checkout@v2
-        if: ${{ github.event_name == 'push' }}
-        with:
-          ref: ${{ github.ref }}
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       if: ${{ github.event_name == 'push' }}
+  #       with:
+  #         ref: ${{ github.ref }}
 
-      - name: Terraform Docs
-        id: docs
-        uses: terraform-docs/gh-actions@v0.10.0
-        with:
-          working-dir: .
-          output-file: README.md
-          output-method: inject
-          args: --sort-by required
-          git-push: true
-          git-push-user-name: "github-actions"
-          git-push-user-email: "noreply@nuvibit.com"
-          git-commit-message: "docs(terraform-docs): [BOT] update README [skip ci]"
+  #     - name: Terraform Docs
+  #       id: docs
+  #       uses: terraform-docs/gh-actions@v0.10.0
+  #       with:
+  #         working-dir: .
+  #         output-file: README.md
+  #         output-method: inject
+  #         args: --sort-by required
+  #         git-push: true
+  #         git-push-user-name: "github-actions"
+  #         git-push-user-email: "noreply@nuvibit.com"
+  #         git-commit-message: "docs(terraform-docs): [BOT] update README [skip ci]"
 
-  terraform-run:
-    needs: [terraform-fmt, terraform-docs]
-    runs-on: ubuntu-latest
-    env:
-      current_repository: ${{ github.repository }}
-      # pseudo ternary expression: if PR is merged to main branch (push event) then current_branch is main else current_branch is PR branch
-      current_branch: ${{ github.event_name == 'push' && github.ref || github.event.pull_request.head.ref }}
-      tf_apply_branch_custom: ${{ fromJson(needs.terraform-fmt.outputs.terraform_options).tf_apply_branch }}
-    outputs:
-      tf_cloud_url: ${{ steps.tfc.outputs.url }}
-      init_status: ${{ steps.init.outcome }}
-      plan_status: ${{ steps.plan.outcome }}
-      tf_apply_branch: ${{ steps.tf_apply_branch.outputs.branch }}
+  # terraform-run:
+  #   needs: [terraform-fmt, terraform-docs]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     current_repository: ${{ github.repository }}
+  #     # pseudo ternary expression: if PR is merged to main branch (push event) then current_branch is main else current_branch is PR branch
+  #     current_branch: ${{ github.event_name == 'push' && github.ref || github.event.pull_request.head.ref }}
+  #     tf_apply_branch_custom: ${{ fromJson(needs.terraform-fmt.outputs.terraform_options).tf_apply_branch }}
+  #   outputs:
+  #     tf_cloud_url: ${{ steps.tfc.outputs.url }}
+  #     init_status: ${{ steps.init.outcome }}
+  #     plan_status: ${{ steps.plan.outcome }}
+  #     tf_apply_branch: ${{ steps.tf_apply_branch.outputs.branch }}
 
-    steps:
-      # if the workspace contains prod prefix terraform apply branch will be forced to "main" else settings from terraform.json will apply
-      - name: Set Terraform Apply Branch
-        id: tf_apply_branch
-        run: |
-          if [[ "$current_repository" == "aws-p-"* || "$current_repository" == "azc-p-"* || "$current_branch" == "refs/heads/main" ]]; then
-            branch="main"
-          else
-            branch="$tf_apply_branch_custom"
-          fi
-          echo "::set-output name=branch::$branch"
+  #   steps:
+  #     # if the workspace contains prod prefix terraform apply branch will be forced to "main" else settings from terraform.json will apply
+  #     - name: Set Terraform Apply Branch
+  #       id: tf_apply_branch
+  #       run: |
+  #         if [[ "$current_repository" == "aws-p-"* || "$current_repository" == "azc-p-"* || "$current_branch" == "refs/heads/main" ]]; then
+  #           branch="main"
+  #         else
+  #           branch="$tf_apply_branch_custom"
+  #         fi
+  #         echo "::set-output name=branch::$branch"
 
-      - name: Set Git Access Token
-        run: |
-          git config --global url."https://oauth2:${{ secrets.GH_SA_TOKEN_RO }}@github.com".insteadOf https://github.com
+  #     - name: Set Git Access Token
+  #       run: |
+  #         git config --global url."https://oauth2:${{ secrets.GH_SA_TOKEN_RO }}@github.com".insteadOf https://github.com
 
-      - name: Checkout
-        uses: actions/checkout@v2
-        if: ${{ github.event_name == 'pull_request' }}
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       with:
+  #         ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Checkout
-        uses: actions/checkout@v2
-        if: ${{ github.event_name == 'push' }}
-        with:
-          ref: ${{ github.ref }}
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       if: ${{ github.event_name == 'push' }}
+  #       with:
+  #         ref: ${{ github.ref }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: latest
-          terraform_wrapper: true
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+  #     - name: Setup Terraform
+  #       uses: hashicorp/setup-terraform@v1
+  #       with:
+  #         terraform_version: latest
+  #         terraform_wrapper: true
+  #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-      - name: Terraform Init
-        id: init
-        run: terraform init
+  #     - name: Terraform Init
+  #       id: init
+  #       run: terraform init
 
-      - name: Terraform Plan
-        id: plan
-        if: ${{ github.event_name == 'pull_request' }}
-        run: terraform plan -no-color 2>&1 | tee /tmp/terraform.plan
-        continue-on-error: true
+  #     - name: Terraform Plan
+  #       id: plan
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       run: terraform plan -no-color 2>&1 | tee /tmp/terraform.plan
+  #       continue-on-error: true
       
-      - name: Get Terraform Cloud Run URL
-        id: tfc
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          match=$(head -50 /tmp/terraform.plan | egrep -i 'https:\/\/app\.terraform\.io\/app\/nuvibit\/.*')
-          echo "::set-output name=url::$match"
-        continue-on-error: true
+  #     - name: Get Terraform Cloud Run URL
+  #       id: tfc
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       run: |
+  #         match=$(head -50 /tmp/terraform.plan | egrep -i 'https:\/\/app\.terraform\.io\/app\/nuvibit\/.*')
+  #         echo "::set-output name=url::$match"
+  #       continue-on-error: true
 
-      - name: Terraform Status
-        if: ${{ steps.plan.outcome == 'failure' }}
-        run: exit 1
+  #     - name: Terraform Status
+  #       if: ${{ steps.plan.outcome == 'failure' }}
+  #       run: exit 1
 
-      - name: Terraform Apply
-        id: apply
-        # pseudo ternary expression: if the PR is merged to main branch (push event) always run terraform apply else only run terraform apply in pull request when custom apply branch matches
-        if: ${{ github.event_name == 'push' && true || github.event.pull_request.head.ref == format('refs/heads/{0}', steps.tf_apply_branch.outputs.branch) }}
-        run: terraform apply -auto-approve
+  #     - name: Terraform Apply
+  #       id: apply
+  #       # pseudo ternary expression: if the PR is merged to main branch (push event) always run terraform apply else only run terraform apply in pull request when custom apply branch matches
+  #       if: ${{ github.event_name == 'push' && true || github.event.pull_request.head.ref == format('refs/heads/{0}', steps.tf_apply_branch.outputs.branch) }}
+  #       run: terraform apply -auto-approve
 
-  publish-results:
-    needs: [terraform-fmt, terraform-docs, terraform-run]
-    runs-on: ubuntu-latest
-    if: ${{ success() || failure() }}
+  # publish-results:
+  #   needs: [terraform-fmt, terraform-docs, terraform-run]
+  #   runs-on: ubuntu-latest
+  #   if: ${{ success() || failure() }}
 
-    steps:
-      - name: Get Check Run IDs
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          CHECK_SUITE_URL=$(curl -s -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }} | jq -r '.check_suite_url')
-          TF_FMT_CHECK_RUN_ID=$(curl -s -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.antiope-preview+json" $CHECK_SUITE_URL/check-runs | jq '.check_runs[] | select(.name=="terraform-fmt") | .id ')
-          echo "TF_FMT_CHECK_RUN_ID=$TF_FMT_CHECK_RUN_ID" >> $GITHUB_ENV
-          TF_DOCS_CHECK_RUN_ID=$(curl -s -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.antiope-preview+json" $CHECK_SUITE_URL/check-runs | jq '.check_runs[] | select(.name=="terraform-docs") | .id ')
-          echo "TF_DOCS_CHECK_RUN_ID=$TF_DOCS_CHECK_RUN_ID" >> $GITHUB_ENV
-          TF_RUN_CHECK_RUN_ID=$(curl -s -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.antiope-preview+json" $CHECK_SUITE_URL/check-runs | jq '.check_runs[] | select(.name=="terraform-run") | .id ')
-          echo "TF_RUN_CHECK_RUN_ID=$TF_RUN_CHECK_RUN_ID" >> $GITHUB_ENV
+  #   steps:
+  #     - name: Get Check Run IDs
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       run: |
+  #         CHECK_SUITE_URL=$(curl -s -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }} | jq -r '.check_suite_url')
+  #         TF_FMT_CHECK_RUN_ID=$(curl -s -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.antiope-preview+json" $CHECK_SUITE_URL/check-runs | jq '.check_runs[] | select(.name=="terraform-fmt") | .id ')
+  #         echo "TF_FMT_CHECK_RUN_ID=$TF_FMT_CHECK_RUN_ID" >> $GITHUB_ENV
+  #         TF_DOCS_CHECK_RUN_ID=$(curl -s -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.antiope-preview+json" $CHECK_SUITE_URL/check-runs | jq '.check_runs[] | select(.name=="terraform-docs") | .id ')
+  #         echo "TF_DOCS_CHECK_RUN_ID=$TF_DOCS_CHECK_RUN_ID" >> $GITHUB_ENV
+  #         TF_RUN_CHECK_RUN_ID=$(curl -s -H "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.antiope-preview+json" $CHECK_SUITE_URL/check-runs | jq '.check_runs[] | select(.name=="terraform-run") | .id ')
+  #         echo "TF_RUN_CHECK_RUN_ID=$TF_RUN_CHECK_RUN_ID" >> $GITHUB_ENV
 
-      - name: Publish Terraform Results
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          TF_CLOUD_URL: ${{ needs.terraform-run.outputs.tf_cloud_url }}
-          TF_FMT_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks?check_run_id=${{ env.TF_FMT_CHECK_RUN_ID }}#step:4:0
-          TF_DOCS_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks?check_run_id=${{ env.TF_DOCS_CHECK_RUN_ID }}#step:4:0
-          TF_INIT_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks?check_run_id=${{ env.TF_RUN_CHECK_RUN_ID }}#step:5:0
-          TF_PLAN_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks?check_run_id=${{ env.TF_RUN_CHECK_RUN_ID }}#step:6:0
-          TF_FMT_RESULT: ${{ fromJSON('[":heavy_check_mark:", ":x:"]')[needs.terraform-fmt.outputs.fmt_status != 'success'] }}
-          TF_DOCS_RESULT: ${{ fromJSON('[":heavy_check_mark:", ":x:"]')[needs.terraform-docs.outputs.docs_status != 'success'] }}
-          TF_INIT_RESULT: ${{ fromJSON('[":heavy_check_mark:", ":x:"]')[needs.terraform-run.outputs.init_status != 'success'] }}
-          TF_PLAN_RESULT: ${{ fromJSON('[":heavy_check_mark:", ":x:"]')[needs.terraform-run.outputs.plan_status != 'success'] }}
-          TF_APPLY_BRANCH: ${{ needs.terraform-run.outputs.tf_apply_branch }} ${{ fromJSON('[":unlock:", ":closed_lock_with_key:"]')[(contains(github.repository, 'azc-p-')||contains(github.repository, 'aws-p-'))] }}
-        with:
-          message: |
-            ## TERRAFORM RESULTS
-            | action | status |
-            |---|---|
-            | terraform [fmt](${{ env.TF_FMT_URL }}) | ${{ env.TF_FMT_RESULT }} |
-            | terraform [docs](${{ env.TF_DOCS_URL }}) | ${{ env.TF_DOCS_RESULT }} |
-            | terraform [init](${{ env.TF_INIT_URL }}) | ${{ env.TF_INIT_RESULT }} |
-            | terraform [plan](${{ env.TF_CLOUD_URL }}) | ${{ env.TF_PLAN_RESULT }} |
+  #     - name: Publish Terraform Results
+  #       uses: marocchino/sticky-pull-request-comment@v2
+  #       if: ${{ github.event_name == 'pull_request' }}
+  #       env:
+  #         TF_CLOUD_URL: ${{ needs.terraform-run.outputs.tf_cloud_url }}
+  #         TF_FMT_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks?check_run_id=${{ env.TF_FMT_CHECK_RUN_ID }}#step:4:0
+  #         TF_DOCS_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks?check_run_id=${{ env.TF_DOCS_CHECK_RUN_ID }}#step:4:0
+  #         TF_INIT_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks?check_run_id=${{ env.TF_RUN_CHECK_RUN_ID }}#step:5:0
+  #         TF_PLAN_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks?check_run_id=${{ env.TF_RUN_CHECK_RUN_ID }}#step:6:0
+  #         TF_FMT_RESULT: ${{ fromJSON('[":heavy_check_mark:", ":x:"]')[needs.terraform-fmt.outputs.fmt_status != 'success'] }}
+  #         TF_DOCS_RESULT: ${{ fromJSON('[":heavy_check_mark:", ":x:"]')[needs.terraform-docs.outputs.docs_status != 'success'] }}
+  #         TF_INIT_RESULT: ${{ fromJSON('[":heavy_check_mark:", ":x:"]')[needs.terraform-run.outputs.init_status != 'success'] }}
+  #         TF_PLAN_RESULT: ${{ fromJSON('[":heavy_check_mark:", ":x:"]')[needs.terraform-run.outputs.plan_status != 'success'] }}
+  #         TF_APPLY_BRANCH: ${{ needs.terraform-run.outputs.tf_apply_branch }} ${{ fromJSON('[":unlock:", ":closed_lock_with_key:"]')[(contains(github.repository, 'azc-p-')||contains(github.repository, 'aws-p-'))] }}
+  #       with:
+  #         message: |
+  #           ## TERRAFORM RESULTS
+  #           | action | status |
+  #           |---|---|
+  #           | terraform [fmt](${{ env.TF_FMT_URL }}) | ${{ env.TF_FMT_RESULT }} |
+  #           | terraform [docs](${{ env.TF_DOCS_URL }}) | ${{ env.TF_DOCS_RESULT }} |
+  #           | terraform [init](${{ env.TF_INIT_URL }}) | ${{ env.TF_INIT_RESULT }} |
+  #           | terraform [plan](${{ env.TF_CLOUD_URL }}) | ${{ env.TF_PLAN_RESULT }} |
 
-            Terraform apply branch = ${{ env.TF_APPLY_BRANCH }}
+  #           Terraform apply branch = ${{ env.TF_APPLY_BRANCH }}
 
-            Results for commit ${{ github.sha }}.
+  #           Results for commit ${{ github.sha }}.
 
-            :recycle: This comment will be updated with latest results.
+  #           :recycle: This comment will be updated with latest results.

@@ -22,12 +22,14 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GH_SA_TOKEN_RO }}
 
       - name: Checkout
         uses: actions/checkout@v2
         if: ${{ github.event_name == 'push' }}
         with:
           ref: ${{ github.ref }}
+          token: ${{ secrets.GH_SA_TOKEN_RO }}
 
       - name: Read Terraform.json
         id: terraform_json
@@ -84,12 +86,14 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GH_SA_TOKEN_RO }}
 
       - name: Checkout
         uses: actions/checkout@v2
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' }}
         with:
           ref: ${{ github.ref }}
+          token: ${{ secrets.GH_SA_TOKEN_RO }}
 
       - name: Terraform Docs
         id: docs

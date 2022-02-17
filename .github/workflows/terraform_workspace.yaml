@@ -99,7 +99,7 @@ jobs:
         id: docs
         uses: terraform-docs/gh-actions@v0.11.0
         with:
-          working-dir: .
+          atlantis-file: atlantis.yaml
           output-file: README.md
           output-method: inject
           args: --sort-by required

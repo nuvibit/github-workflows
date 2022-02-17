@@ -108,20 +108,9 @@ jobs:
           git-push-user-email: "noreply@nuvibit.com"
           git-commit-message: "docs(terraform-docs): update README"
 
-  debug:
-    needs: [terraform-fmt, terraform-docs]
-    runs-on: ubuntu-latest
-    steps:
-      - name: debug
-        run: |
-          echo "${{ needs.terraform-fmt.outputs.diff_exists }}"
-          echo "${{ needs.terraform-docs.outputs.diff_exists }}"
-          echo "${{ needs.terraform-fmt.outputs.diff_exists == false }}"
-          echo "${{ needs.terraform-docs.outputs.diff_exists == false }}"
-
   terraform-run:
     needs: [terraform-fmt, terraform-docs]
-    if: ${{ needs.terraform-fmt.outputs.diff_exists == false && needs.terraform-docs.outputs.diff_exists == false }}
+    if: ${{ needs.terraform-fmt.outputs.diff_exists == 'false' && needs.terraform-docs.outputs.diff_exists == 'false' }}
     runs-on: ubuntu-latest
     env:
       current_repository: ${{ github.repository }}

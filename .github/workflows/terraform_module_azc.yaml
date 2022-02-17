@@ -68,6 +68,8 @@ jobs:
         uses: terraform-docs/gh-actions@v0.11.0
         with:
           working-dir: .
+          recursive: true
+          recursive-path: modules
           output-file: README.md
           output-method: inject
           args: --sort-by required
@@ -143,7 +145,7 @@ jobs:
   #           **/report.xml
 
   publish-results:
-    needs: [terraform-fmt, terraform-docs, terraform-run]
+    needs: [terraform-fmt, terraform-docs, terraform-test]
     runs-on: ubuntu-latest
     if: ${{ success() || failure() }}
 

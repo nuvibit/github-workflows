@@ -93,7 +93,7 @@ jobs:
 
       - name: Terraform Docs
         id: docs
-        uses: terraform-docs/gh-actions@v0.10.0
+        uses: terraform-docs/gh-actions@v0.11.0
         with:
           working-dir: .
           output-file: README.md
@@ -106,7 +106,7 @@ jobs:
       
       - name: debug
         run: |
-          echo ${{ toJSON(steps) }}
+          echo "${{ toJSON(steps) }}"
 
   debug:
     needs: [terraform-fmt, terraform-docs]

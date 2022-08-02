@@ -1,14 +1,7 @@
-name: DRAW.IO EXPORT TO PNG
+name: DRAW.IO EXPORT
 
 on:
   workflow_call:
-
-# on:
-#   push:
-#     branches:
-#       - main
-#     paths:
-#       - "**.drawio"
 
 concurrency:
   group: drawio-export-${{ github.ref }}

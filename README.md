@@ -1,5 +1,5 @@
 
-# GitHub Actions Reusable Workflows
+# GitHub Actions: reusable workflows
 
 <!-- LOGO -->
 <a href="https://nuvibit.com">

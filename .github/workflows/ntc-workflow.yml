@@ -1,0 +1,93 @@
+name: NTC WORKFLOW
+
+on:
+  workflow_call:
+    inputs:
+      license_file_source_repo:
+        description: 'Repository where license file is stored.'
+        default: "nuvibit-terraform-collection/terraform-aws-ntc-module"
+        required: false
+        type: string
+      license_file_name:
+        description: 'License file name.'
+        default: "LICENSE.md"
+        required: false
+        type: string
+      license_header:
+        description: 'License header which should be added to all required files.'
+        default: "# Copyright (c) Nuvibit AG\\n# SPDX-License-Identifier: SEE LICENSE IN LICENSE.md"
+        required: false
+        type: string
+      insert_header_file_extension:
+        description: 'File extension of files where license header should be added.'
+        default: ".tf"
+        required: false
+        type: string
+      commit_user:
+        description: 'Username which should be used for commits by github action'
+        default: 'github-actions'
+        required: false
+        type: string
+      commit_email:
+        description: 'Email which should be used for commits by github action'
+        default: 'noreply@github.com'
+        required: false
+        type: string
+    secrets:
+      GHE_API_TOKEN:
+        required: true
+
+jobs:
+  ntc-license:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GHE_API_TOKEN }}
+
+      - name: Checkout License File
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.license_file_source_repo }}
+          path: remote_repo
+          persist-credentials: false
+          sparse-checkout: |
+            ${{ inputs.license_file_name }}
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.GHE_API_TOKEN }}
+
+      - name: Update License File
+        run: |
+          cp remote_repo/${{ inputs.license_file_name }} .
+          rm -rf remote_repo
+
+      - name: Insert License Header
+        run: |
+          find . -name "*${{ inputs.insert_header_file_extension }}" | while read file; do
+            if ! grep -q "Copyright (c) Nuvibit AG" "$file"; then
+              echo "[info] inserting license header into $file"
+              echo -e "${{ inputs.license_header }}\n\n$(cat $file | sed '/./,$!d'))" > $file
+            fi
+          done
+
+      - name: Commit Changes
+        id: fmt_commit
+        run: |
+          git config --local user.name "${{ inputs.commit_user }}"
+          git config --local user.email "${{ inputs.commit_email }}"
+          git add LICENSE.md
+          if [[ -z $(git status -s) ]]; then
+            echo "diff=false" >> $GITHUB_OUTPUT
+          else
+            echo "diff=true" >> $GITHUB_OUTPUT
+          fi
+          git diff-index --quiet HEAD || git commit -m "chore: update license" -a
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.event.pull_request.head.ref }}

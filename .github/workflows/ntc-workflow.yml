@@ -60,8 +60,10 @@ jobs:
 
       - name: Update License File
         run: |
+          ls .
           cp remote_license/${{ inputs.license_file_name }} .
           rm -rf remote_license
+          ls .
 
       - name: Insert License Header
         run: |
@@ -82,7 +84,7 @@ jobs:
           else
             echo "diff=true" >> $GITHUB_OUTPUT
           fi
-          git diff-index --quiet HEAD || git commit -m "chore: add license header" -a
+          git diff-index --quiet HEAD || git commit -m "chore: update license" -a
 
       - name: Push Changes
         uses: ad-m/github-push-action@v0.6.0

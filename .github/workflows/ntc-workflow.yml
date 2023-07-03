@@ -48,23 +48,25 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.GHE_API_TOKEN }}
 
+      - name: Checkout License File
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.license_file_source_repo }}
+          path: license
+          sparse-checkout: |
+            ${{ inputs.license_file_name }}
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.GHE_API_TOKEN }}
+
       - name: Insert License Header
         run: |
+          ls .
           find . -name "*${{ inputs.insert_header_file_extension }}" | while read file; do
             if ! grep -q "Copyright (c) Nuvibit AG" "$file"; then
               echo "[info] inserting license header into $file"
               echo -e "${{ inputs.license_header }}\n\n$(cat $file | sed '/./,$!d'))" > $file
             fi
           done
-
-      - name: Get License File
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ inputs.license_file_source_repo }}
-          sparse-checkout: |
-            ${{ inputs.license_file_name }}
-          sparse-checkout-cone-mode: false
-          token: ${{ secrets.GHE_API_TOKEN }}
 
       - name: Commit Changes
         id: fmt_commit

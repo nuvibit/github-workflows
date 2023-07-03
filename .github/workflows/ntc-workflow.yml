@@ -42,8 +42,8 @@ jobs:
         id: list_files
         run: |
           FILE_PATHS=()
-          while IFS=  read -r -d $'\0'; do
-              FILE_PATHS+=("$REPLY")
+          while IFS= read -r -d $'\0'; do
+            FILE_PATHS+=("$REPLY")
           done < <(find . -name "*${{ inputs.insert_header_file_extension }}" -print0)
 
           for file in $FILE_PATHS; do

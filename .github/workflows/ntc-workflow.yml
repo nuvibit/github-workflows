@@ -50,7 +50,7 @@ jobs:
       - name: Insert License Header
         id: insert_header
         with:
-          file_paths = steps.list_files.outputs.file_paths
+          file_paths: ${{ steps.list_files.outputs.file_paths }}
         run: |
           for file in $file_paths
           do

@@ -84,6 +84,7 @@ jobs:
             echo "diff=true" >> $GITHUB_OUTPUT
           fi
           git diff-index --quiet HEAD || git commit -m "chore: update license" -a
+          git diff-index --quiet HEAD
 
       - name: Push Changes
         uses: ad-m/github-push-action@v0.6.0

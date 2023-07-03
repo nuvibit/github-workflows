@@ -47,8 +47,8 @@ jobs:
           done < <(find . -name "*${{ inputs.insert_header_file_extension }}" -print0)
 
           for file in $FILE_PATHS; do
-            if not grep -q "Copyright (c) Nuvibit AG" "$file"; then
-              echo -e "${{ inputs.license_header }}\n\n$(cat $file | xargs)" > $file
+            if ! grep -q "Copyright (c) Nuvibit AG" "$file"; then
+              echo -e "${{ inputs.license_header }}\n\n$(cat $file)" > $file
             fi
           done
 
@@ -62,7 +62,7 @@ jobs:
           else
             echo "diff=true" >> $GITHUB_OUTPUT
           fi
-          git diff-index --quiet HEAD || git commit -m "style(terraform fmt): format code" -a
+          git diff-index --quiet HEAD || git commit -m "chore: add license header" -a
 
       - name: Push Changes
         uses: ad-m/github-push-action@v0.6.0

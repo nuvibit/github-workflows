@@ -41,13 +41,7 @@ jobs:
       - name: Insert License Header
         id: list_files
         run: |
-          FILE_PATHS=()
-          while IFS= read -r -d $'\0'; do
-            FILE_PATHS+=("$REPLY")
-          done <<(find . -name "*${{ inputs.insert_header_file_extension }}" -print0)
-
-          for file in $FILE_PATHS; do
-            echo "debug: $file"
+          find . -name "*${{ inputs.insert_header_file_extension }}" | while read file; do
             if ! grep -q "Copyright (c) Nuvibit AG" "$file"; then
               echo "insert license header into $file"
               echo -e "${{ inputs.license_header }}\n\n$(cat $file)" > $file

@@ -42,27 +42,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout License File
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.license_file_source_repo }}
+          path: remote_repo
+          sparse-checkout: |
+            ${{ inputs.license_file_name }}
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.GHE_API_TOKEN }}
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.GHE_API_TOKEN }}
 
-      - name: Checkout License File
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ inputs.license_file_source_repo }}
-          path: remote_license
-          sparse-checkout: |
-            ${{ inputs.license_file_name }}
-          sparse-checkout-cone-mode: false
-          token: ${{ secrets.GHE_API_TOKEN }}
-
       - name: Update License File
         run: |
-          ls .
-          cp remote_license/${{ inputs.license_file_name }} .
-          rm -rf remote_license
+          cp remote_repo/${{ inputs.license_file_name }} .
+          rm -rf remote_repo
           ls .
 
       - name: Insert License Header

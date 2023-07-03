@@ -29,8 +29,6 @@ on:
 jobs:
   ntc-license:
     runs-on: ubuntu-latest
-    outputs:
-      file_paths: ${{ steps.list-files.outputs.paths }}
 
     steps:
       - name: Checkout
@@ -38,20 +36,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref }}
 
-      - name: List Files
+      - name: Insert License Header
         id: list_files
         run: |
           FILE_PATHS=()
           while IFS=  read -r -d $'\0'; do
               FILE_PATHS+=("$REPLY")
           done < <(find . -name "*${{ inputs.insert_header_file_extension }}" -print0)
-          echo "file_paths=$FILE_PATHS" >> $GITHUB_OUTPUT
 
-      - name: Insert License Header
-        id: insert_header
-        env:
-          FILE_PATHS: ${{ steps.list_files.outputs.file_paths }}
-        run: |
           for file in $FILE_PATHS
           do
             not grep -q "Copyright (c) Nuvibit AG" "$file"; then

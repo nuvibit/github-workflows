@@ -1,0 +1,78 @@
+name: NTC WORKFLOW
+
+on:
+  workflow_call:
+    inputs:
+      license_header:
+        description: 'License header which should be added to all required files.'
+        default: |
+          # Copyright (c) Nuvibit AG
+          # SPDX-License-Identifier: SEE LICENSE IN LICENSE.md"
+        required: false
+        type: string
+      insert_header_file_extension:
+        description: 'File extension of files where license header should be added.'
+        default: ".tf"
+        required: false
+        type: string
+      commit_user:
+        description: 'Username which should be used for commits by github action'
+        default: 'github-actions'
+        required: false
+        type: string
+      commit_email:
+        description: 'Email which should be used for commits by github action'
+        default: 'noreply@github.com'
+        required: false
+        type: string
+
+jobs:
+  ntc-license:
+    runs-on: ubuntu-latest
+    outputs:
+      file_paths: ${{ steps.list-files.outputs.paths }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: List Files
+        id: list_files
+        run: |
+          FILE_PATHS=()
+          while IFS=  read -r -d $'\0'; do
+              FILE_PATHS+=("$REPLY")
+          done < <(find . -name "*${{ inputs.insert_header_file_extension }}" -print0)
+          echo "file_paths=$FILE_PATHS" >> $GITHUB_OUTPUT
+
+      - name: Insert License Header
+        id: insert_header
+        with:
+          file_paths = steps.list_files.outputs.file_paths
+        run: |
+          for file in $file_paths
+          do
+            not grep -q "Copyright (c) Nuvibit AG" "$file"; then
+              echo -e "${{ license_header }}\n\n$(cat $file | xargs)" > $file
+            fi
+          done
+
+      - name: Commit Changes
+        id: fmt_commit
+        run: |
+          git config --local user.name "${{ inputs.commit_user }}"
+          git config --local user.email "${{ inputs.commit_email }}"
+          if [[ -z $(git status -s) ]]; then
+            echo "diff=false" >> $GITHUB_OUTPUT
+          else
+            echo "diff=true" >> $GITHUB_OUTPUT
+          fi
+          git diff-index --quiet HEAD || git commit -m "style(terraform fmt): format code" -a
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.event.pull_request.head.ref }}

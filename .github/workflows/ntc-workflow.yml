@@ -54,11 +54,15 @@ jobs:
           repository: ${{ inputs.license_file_source_repo }}
           path: remote_repo
           persist-credentials: false
+          sparse-checkout: |
+            ${{ inputs.license_file_name }}
+          sparse-checkout-cone-mode: false
           token: ${{ secrets.GHE_API_TOKEN }}
 
       - name: Update License File
         run: |
           cp remote_repo/${{ inputs.license_file_name }} .
+          echo "test" > LICENSE.md
           rm -rf remote_repo
           ls .
 

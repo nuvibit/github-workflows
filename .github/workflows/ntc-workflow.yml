@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: ${{ inputs.license_file_source_repo }}
-          path: /tmp
+          path: remote_license
           sparse-checkout: |
             ${{ inputs.license_file_name }}
           sparse-checkout-cone-mode: false
@@ -60,7 +60,8 @@ jobs:
 
       - name: Update License File
         run: |
-          cp /tmp/${{ inputs.license_file_name }} .
+          cp remote_license/${{ inputs.license_file_name }} .
+          rm -rf remote_license
 
       - name: Insert License Header
         run: |

@@ -5,9 +5,7 @@ on:
     inputs:
       license_header:
         description: 'License header which should be added to all required files.'
-        default: |
-          # Copyright (c) Nuvibit AG
-          # SPDX-License-Identifier: SEE LICENSE IN LICENSE.md"
+        default: "# Copyright (c) Nuvibit AG\n# SPDX-License-Identifier: SEE LICENSE IN LICENSE.md"
         required: false
         type: string
       insert_header_file_extension:

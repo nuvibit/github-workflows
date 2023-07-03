@@ -43,7 +43,7 @@ jobs:
         run: |
           find . -name "*${{ inputs.insert_header_file_extension }}" | while read file; do
             if ! grep -q "Copyright (c) Nuvibit AG" "$file"; then
-              echo "insert license header into $file"
+              echo "[info] inserting license header into $file"
               echo -e "${{ inputs.license_header }}\n\n$(cat $file | sed '/./,$!d'))" > $file
             fi
           done

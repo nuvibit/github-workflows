@@ -54,9 +54,6 @@ jobs:
           repository: ${{ inputs.license_file_source_repo }}
           path: remote_repo
           persist-credentials: false
-          sparse-checkout: |
-            ${{ inputs.license_file_name }}
-          sparse-checkout-cone-mode: false
           token: ${{ secrets.GHE_API_TOKEN }}
 
       - name: Update License File

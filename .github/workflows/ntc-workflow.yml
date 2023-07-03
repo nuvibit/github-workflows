@@ -61,9 +61,8 @@ jobs:
 
       - name: Update License File
         run: |
-          echo "test" > LICENSE.md
+          cp remote_repo/${{ inputs.license_file_name }} .
           rm -rf remote_repo
-          ls .
 
       - name: Insert License Header
         run: |
@@ -79,6 +78,7 @@ jobs:
         run: |
           git config --local user.name "${{ inputs.commit_user }}"
           git config --local user.email "${{ inputs.commit_email }}"
+          git add LICENSE.md
           if [[ -z $(git status -s) ]]; then
             echo "diff=false" >> $GITHUB_OUTPUT
           else

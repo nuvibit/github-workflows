@@ -84,8 +84,8 @@ jobs:
           fi
           git diff-index --quiet HEAD || git commit -m "chore: add license header" -a
 
-      # - name: Push Changes
-      #   uses: ad-m/github-push-action@v0.6.0
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     branch: ${{ github.event.pull_request.head.ref }}
+      - name: Push Changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.event.pull_request.head.ref }}

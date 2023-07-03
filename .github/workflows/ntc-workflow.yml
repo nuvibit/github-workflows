@@ -49,10 +49,10 @@ jobs:
 
       - name: Insert License Header
         id: insert_header
-        with:
-          file_paths: ${{ steps.list_files.outputs.file_paths }}
+        env:
+          FILE_PATHS: ${{ steps.list_files.outputs.file_paths }}
         run: |
-          for file in $file_paths
+          for file in $FILE_PATHS
           do
             not grep -q "Copyright (c) Nuvibit AG" "$file"; then
               echo -e "${{ license_header }}\n\n$(cat $file | xargs)" > $file

@@ -53,6 +53,7 @@ jobs:
         with:
           repository: ${{ inputs.license_file_source_repo }}
           path: remote_repo
+          persist-credentials: false
           sparse-checkout: |
             ${{ inputs.license_file_name }}
           sparse-checkout-cone-mode: false
@@ -84,7 +85,6 @@ jobs:
             echo "diff=true" >> $GITHUB_OUTPUT
           fi
           git diff-index --quiet HEAD || git commit -m "chore: update license" -a
-          git diff-index --quiet HEAD
 
       - name: Push Changes
         uses: ad-m/github-push-action@v0.6.0

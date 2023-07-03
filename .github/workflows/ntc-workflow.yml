@@ -61,7 +61,6 @@ jobs:
 
       - name: Update License File
         run: |
-          cp remote_repo/${{ inputs.license_file_name }} .
           echo "test" > LICENSE.md
           rm -rf remote_repo
           ls .

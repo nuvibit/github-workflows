@@ -47,8 +47,9 @@ jobs:
           done < <(find . -name "*${{ inputs.insert_header_file_extension }}" -print0)
 
           for file in $FILE_PATHS; do
+            echo "debug: $file"
             if ! grep -q "Copyright (c) Nuvibit AG" "$file"; then
-              print "insert license header into $file"
+              echo "insert license header into $file"
               echo -e "${{ inputs.license_header }}\n\n$(cat $file)" > $file
             fi
           done

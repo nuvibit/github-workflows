@@ -1,0 +1,39 @@
+name: HUGO DEPLOY
+
+on:
+  workflow_call:
+    secrets:
+      HUGO_AWS_DEFAULT_REGION:
+        required: false
+      HUGO_AWS_ACCESS_KEY_ID:
+        required: true
+      HUGO_AWS_SECRET_ACCESS_KEY:
+        required: false
+
+jobs:
+  hugo-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build Page
+        run: hugo --minify
+
+      - name: Deploy Page
+        env:
+          AWS_DEFAULT_REGION: ${{ secrets.HUGO_AWS_DEFAULT_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.HUGO_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.HUGO_AWS_SECRET_ACCESS_KEY }}
+        run: hugo deploy --target aws

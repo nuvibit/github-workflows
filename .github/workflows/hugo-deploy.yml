@@ -3,6 +3,11 @@ name: HUGO DEPLOY
 on:
   workflow_call:
     inputs:
+      hugo_minify:
+        description: 'Minify all files including html'
+        default: false
+        required: false
+        type: boolean
       hugo_dry_run:
         description: 'See the changes without applying them'
         default: false
@@ -37,8 +42,13 @@ jobs:
           hugo-version: 'latest'
           extended: true
 
-      - name: Build Page
+      - name: Build Page (Minify)
+        if: ${{ inputs.hugo_minify == true }}
         run: hugo --minify
+
+      - name: Build Page
+        if: ${{ inputs.hugo_minify == false }}
+        run: hugo
 
       - name: Deploy Page (Dry Run)
         if: ${{ inputs.hugo_dry_run == true }}

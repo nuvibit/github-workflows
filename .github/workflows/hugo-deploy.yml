@@ -3,6 +3,11 @@ name: HUGO DEPLOY
 on:
   workflow_call:
     inputs:
+      hugo_dry_run:
+        description: 'See the changes without applying them'
+        default: false
+        required: false
+        type: boolean
       hugo_target_name:
         description: 'Remote target for deployment'
         default: 'aws'
@@ -35,8 +40,16 @@ jobs:
       - name: Build Page
         run: hugo --minify
 
-      - name: Deploy Page
+      - name: Deploy Page (Dry Run)
+        if: ${{ inputs.hugo_dry_run == true }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.HUGO_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.HUGO_AWS_SECRET_ACCESS_KEY }}
-        run: hugo deploy --target ${{ hugo_target_name }}
+        run: hugo deploy --target ${{ inputs.hugo_target_name }} --dryRun
+
+      - name: Deploy Page
+        if: ${{ inputs.hugo_dry_run == false }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.HUGO_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.HUGO_AWS_SECRET_ACCESS_KEY }}
+        run: hugo deploy --target ${{ inputs.hugo_target_name }}

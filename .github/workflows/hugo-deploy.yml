@@ -8,6 +8,11 @@ on:
         default: false
         required: false
         type: boolean
+      hugo_minify:
+        description: 'Minify all files including html'
+        default: false
+        required: false
+        type: boolean
       hugo_target_name:
         description: 'Remote target for deployment'
         default: 'aws'
@@ -37,11 +42,16 @@ jobs:
           hugo-version: 'latest'
           extended: true
 
-      - name: Build Page
+      - name: Build Page (Minify)
+        if: ${{ inputs.hugo_minify == true }}
         run: hugo --minify
 
+      - name: Build Page
+        if: ${{ inputs.hugo_minify == false }}
+        run: hugo
+
       - name: Deploy Page (Dry Run)
-        if: ${{ inputs.hugo_dry_run == true }}
+        if: ${{ inputs.hugo_minify == true }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.HUGO_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.HUGO_AWS_SECRET_ACCESS_KEY }}

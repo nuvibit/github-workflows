@@ -2,9 +2,13 @@ name: HUGO DEPLOY
 
 on:
   workflow_call:
-    secrets:
-      HUGO_AWS_DEFAULT_REGION:
+    inputs:
+      hugo_target_name:
+        description: 'Remote target for deployment'
+        default: 'aws'
         required: false
+        type: string
+    secrets:
       HUGO_AWS_ACCESS_KEY_ID:
         required: true
       HUGO_AWS_SECRET_ACCESS_KEY:
@@ -33,7 +37,6 @@ jobs:
 
       - name: Deploy Page
         env:
-          AWS_DEFAULT_REGION: ${{ secrets.HUGO_AWS_DEFAULT_REGION }}
           AWS_ACCESS_KEY_ID: ${{ secrets.HUGO_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.HUGO_AWS_SECRET_ACCESS_KEY }}
-        run: hugo deploy --target aws
+        run: hugo deploy --target ${{ hugo_target_name }}

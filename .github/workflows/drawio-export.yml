@@ -2,6 +2,12 @@ name: DRAW.IO EXPORT
 
 on:
   workflow_call:
+    inputs:
+      drawio_path:
+        description: 'Path where drawio diagrams are stored'
+        default: "."
+        required: false
+        type: string
 
 concurrency:
   group: drawio-export-${{ github.ref }}
@@ -20,7 +26,7 @@ jobs:
       - name: Export drawio files to asciidoctor and png files
         uses: rlespinasse/drawio-export-action@v2
         with:
-          path: .
+          path: ${{ inputs.drawio_path }}
           format: png
           transparent: false
           action-mode: all

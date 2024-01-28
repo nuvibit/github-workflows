@@ -5,7 +5,7 @@ on:
     inputs:
       license_file_source_repo:
         description: 'Repository where license file is stored.'
-        default: "nuvibit-terraform-collection/terraform-aws-ntc-module"
+        default: "nuvibit-terraform-collection/module.tpl"
         required: false
         type: string
       license_file_name:

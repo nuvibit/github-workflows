@@ -10,12 +10,12 @@ on:
         type: string
       license_file_name:
         description: 'License file name.'
-        default: "LICENSE.md"
+        default: "LICENSE"
         required: false
         type: string
       license_header:
         description: 'License header which should be added to all required files.'
-        default: "# Copyright (c) Nuvibit AG\\n# SPDX-License-Identifier: SEE LICENSE IN LICENSE.md"
+        default: "# Copyright (c) Nuvibit AG\\n# SPDX-License-Identifier: see terms and conditions in the LICENSE file"
         required: false
         type: string
       insert_header_file_extension:
@@ -61,24 +61,24 @@ jobs:
 
       - name: Update License File
         run: |
+          rm -f LICENSE.md
           cp remote_repo/${{ inputs.license_file_name }} .
           rm -rf remote_repo
 
       - name: Insert License Header
         run: |
           find . -name "*${{ inputs.insert_header_file_extension }}" | while read file; do
-            if ! grep -q "Copyright (c) Nuvibit AG" "$file"; then
+            if ! grep -q "# SPDX-License-Identifier: see terms and conditions in the LICENSE file" "$file"; then
               echo "[info] inserting license header into $file"
               echo -e "${{ inputs.license_header }}\n\n$(cat $file | sed '/./,$!d'))" > $file
             fi
           done
 
       - name: Commit Changes
-        id: fmt_commit
         run: |
           git config --local user.name "${{ inputs.commit_user }}"
           git config --local user.email "${{ inputs.commit_email }}"
-          git add LICENSE.md
+          git add .
           if [[ -z $(git status -s) ]]; then
             echo "diff=false" >> $GITHUB_OUTPUT
           else

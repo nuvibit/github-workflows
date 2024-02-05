@@ -13,11 +13,6 @@ on:
         default: "LICENSE"
         required: false
         type: string
-      license_header:
-        description: 'License header which should be added to all required files.'
-        default: "# Copyright (c) Nuvibit AG\\n# SPDX-License-Identifier: see terms and conditions in the LICENSE file"
-        required: false
-        type: string
       insert_header_file_extension:
         description: 'File extension of files where license header should be added.'
         default: ".tf"
@@ -72,7 +67,7 @@ jobs:
             sed -i '/^# Copyright/d' $file
             sed -i '/^# SPDX-License-Identifier/d' $file
             sed -i '/./,$!d' $file
-            echo -e "${{ inputs.license_header }}\n\n$(cat $file)" > $file
+            sed -i '1s/^/# Copyright (c) Nuvibit AG\n# SPDX-License-Identifier: see terms and conditions in the LICENSE file\n\n/' $file
           done
 
       - name: Commit Changes

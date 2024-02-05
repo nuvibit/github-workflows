@@ -68,10 +68,9 @@ jobs:
       - name: Insert License Header
         run: |
           find . -name "*${{ inputs.insert_header_file_extension }}" | while read file; do
-            if ! grep -q "# SPDX-License-Identifier: see terms and conditions in the LICENSE file" "$file"; then
-              echo "[info] inserting license header into $file"
-              echo -e "${{ inputs.license_header }}\n\n$(cat $file | sed '/./,$!d'))" > $file
-            fi
+            sed '/^# Copyright/d' $file
+            sed '/^# SPDX-License-Identifier/d' $file
+            echo -e "${{ inputs.license_header }}\n\n$(cat $file | sed '/./,$!d'))" > $file
           done
 
       - name: Commit Changes

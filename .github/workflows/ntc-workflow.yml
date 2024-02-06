@@ -62,6 +62,7 @@ jobs:
 
       - name: Insert License Header
         run: |
+          sed -i 's/LICENSE.md/LICENSE/g' README.md
           find . -name "*${{ inputs.insert_header_file_extension }}" | while read file; do
             echo "updating license header in $file"
             sed -i '/^# Copyright/d' $file

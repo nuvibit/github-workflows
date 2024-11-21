@@ -18,6 +18,16 @@ on:
         default: 'aws'
         required: false
         type: string
+      hugo_version:
+        description: 'Version of hugo binary'
+        default: 'latest'
+        required: false
+        type: string
+      hugo_extended:
+        description: 'Use the extended version of hugo'
+        default: true
+        required: false
+        type: boolean
     secrets:
       HUGO_AWS_ACCESS_KEY_ID:
         required: true
@@ -39,8 +49,8 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: 'latest'
-          extended: true
+          hugo-version: ${{ inputs.hugo_version }}
+          extended: ${{ inputs.hugo_extended }}
 
       - name: Build Page (Minify)
         if: ${{ inputs.hugo_minify == true }}

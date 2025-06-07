@@ -28,11 +28,14 @@ on:
         default: true
         required: false
         type: boolean
-    secrets:
-      HUGO_AWS_ACCESS_KEY_ID:
+      aws_default_region:
+        description: 'AWS region to use for deployment (e.g. eu-central-1)'
         required: true
-      HUGO_AWS_SECRET_ACCESS_KEY:
-        required: false
+        type: string
+      aws_oicd_role_arn:
+        description: 'AWS OIDC IAM role ARN to assume for deployment (e.g. arn:aws:iam::111111111111:role/oidc-deployment-role)'
+        required: true
+        type: string
 
 jobs:
   hugo-deploy:
@@ -60,16 +63,16 @@ jobs:
         if: ${{ inputs.hugo_minify == false }}
         run: hugo
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.aws_oicd_role_arn }}
+          aws-region: ${{ inputs.aws_default_region }}
+
       - name: Deploy Page (Dry Run)
         if: ${{ inputs.hugo_dry_run == true }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.HUGO_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.HUGO_AWS_SECRET_ACCESS_KEY }}
         run: hugo deploy --target ${{ inputs.hugo_target_name }} --dryRun
 
       - name: Deploy Page
         if: ${{ inputs.hugo_dry_run == false }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.HUGO_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.HUGO_AWS_SECRET_ACCESS_KEY }}
         run: hugo deploy --target ${{ inputs.hugo_target_name }}

@@ -1,0 +1,125 @@
+name: NPM FRONTEND DEPLOYMENT
+
+on:
+  workflow_call:
+    inputs:
+      aws_default_region:
+        description: 'AWS region to use for deployment (default: eu-central-1)'
+        default: 'eu-central-1'
+        required: false
+        type: string
+      aws_oidc_role_arn:
+        description: 'AWS OIDC IAM role ARN to assume for deployment (e.g. arn:aws:iam::111111111111:role/oidc-deployment-role)'
+        required: true
+        type: string
+      domain_name:
+        description: 'Domain name used for the frontend application (e.g. docs.nuvibit.com)'
+        required: true
+        type: string 
+      s3_deployment_dir:
+        description: 'S3 directory where the build artifacts will be uploaded (default: build)'
+        default: 'build'
+        required: false
+        type: string
+      local_build_dir:
+        description: 'Local directory where the build artifacts are located (default: build)'
+        default: 'build'
+        required: false
+        type: string
+      cloudfront_invalidate_paths:
+        description: 'Paths to invalidate in CloudFront after deployment (ALL, UPDATED, NONE)'
+        required: true
+        type: string
+        # ALL: Invalidate all paths (default)
+        # UPDATED: Invalidate only paths that were updated
+        # NONE: Do not invalidate any paths
+        default: 'ALL'
+
+jobs:
+  npm-frontend-deploy:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/Jod
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build website
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.aws_oidc_role_arn }}
+          aws-region: ${{ inputs.aws_default_region }}
+
+      - name: Upload to S3 and track changed files
+        id: sync
+        run: |
+          # First identify which files will be synced
+          SYNC_OUTPUT=$(aws s3 sync ./${{ inputs.local_build_dir }} s3://${{ inputs.domain_name }}/${{ inputs.s3_deployment_dir }} --dryrun)
+          echo "Found changes to sync."
+          
+          # Extract file paths that will be uploaded/updated
+          PATHS_TO_INVALIDATE=$(echo "$SYNC_OUTPUT" | grep -E 'upload:|update:' | sed -E 's/^\(dryrun\) (upload:|update:) (.*) to ([^ ]+).*/\3/' | sed 's|s3://${{ inputs.domain_name }}/${{ inputs.s3_deployment_dir }}||')
+          echo "Paths to be updated:"
+          echo "$PATHS_TO_INVALIDATE"
+          
+          # Save paths for invalidation, adjust format for JSON array
+          if [ -n "$PATHS_TO_INVALIDATE" ]; then
+            PATHS_JSON=$(echo "$PATHS_TO_INVALIDATE" | sed 's/^/"/' | sed 's/$/"/' | paste -sd, -)
+            echo "paths_json=[$PATHS_JSON]" >> $GITHUB_OUTPUT
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes to invalidate"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Perform the actual sync
+          aws s3 sync ./${{ inputs.local_build_dir }} s3://${{ inputs.domain_name }}/${{ inputs.s3_deployment_dir }}
+
+      - name: Find CloudFront distribution ID
+        id: cloudfront
+        if: steps.sync.outputs.has_changes == 'true'
+        run: |
+          # Find the CloudFront distribution that has our S3 bucket as origin
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[].DomainName, '${{ inputs.domain_name }}.s3.${{ inputs.AWS_DEFAULT_REGION }}.amazonaws.com')].Id" --output text)
+          
+          if [ -z "$DISTRIBUTION_ID" ]; then
+            echo "::error::Could not find CloudFront distribution for ${{ inputs.domain_name }}"
+            exit 1
+          fi
+          
+          echo "Found CloudFront distribution: $DISTRIBUTION_ID"
+          echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+
+      - name: Invalidate CloudFront cache for ALL PATHS
+        if: steps.sync.outputs.has_changes == 'true' && inputs.cloudfront_invalidate_paths == 'ALL'
+        run: |
+          # Create CloudFront invalidation for all paths
+          DISTRIBUTION_ID=${{ steps.cloudfront.outputs.distribution_id }}
+          
+          echo "Creating CloudFront invalidation for paths: /*"
+          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+
+      - name: Invalidate CloudFront cache for UPDATED PATHS
+        if: steps.sync.outputs.has_changes == 'true' && inputs.cloudfront_invalidate_paths == 'UPDATED'
+        run: |
+          # Create CloudFront invalidation for the paths that were updated
+          PATHS=${{ toJSON(steps.sync.outputs.paths_json) }}
+          DISTRIBUTION_ID=${{ steps.cloudfront.outputs.distribution_id }}
+      
+          echo "Creating Invalidation batch file"
+          echo "{\"Paths\": {\"Quantity\": $(echo $PATHS | jq length), \"Items\": $PATHS}, \"CallerReference\": \"$(date +%s)\"}" > inv-batch.json
+          echo "Creating CloudFront invalidation for paths: $PATHS"
+          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --invalidation-batch file://inv-batch.json

@@ -1,39 +1,29 @@
-
-# GitHub Actions: reusable workflows
+# GitHub Actions - Mixed Reusable Workflows
 
 <!-- LOGO -->
-<a href="https://nuvibit.com">
-    <img src="https://nuvibit.com/images/logo/logo-nuvibit-badge.png" alt="logo_nuvibit" title="nuvibit" align="right" width="100" />
-</a>
-
-<!-- SHIELDS -->
-[![Maintained by nuvibit.com][nuvibit-shield]][nuvibit-url]
-[![Latest Release][release-shield]][release-url]
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://nuvibit.com/images/logo/logo-nuvibit-banner.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://nuvibit.com/images/logo/logo-nuvibit-banner-dark.png">
+  <img alt="Nuvibit - Sovereign AWS Platforms" src="https://nuvibit.com/images/logo/logo-nuvibit-banner.png" width="400">
+</picture>
+<br/>
+<br/>
 
 <!-- DESCRIPTION -->
-a collection of github actions to be used as reusable workflows.
+Collection of mixed reusable [GitHub Workflows](https://docs.github.com/en/actions/learn-github-actions/). 
+Built by **Nuvibit**, the leading specialist in **sovereign AWS platforms** and creator of the **Nuvibit Terraform Collection (NTC)**.
 
 <!-- AUTHORS -->
 ## Authors
-
-This collection is maintained by [Nuvibit][nuvibit-url] with help from [these amazing contributors][contributors-url]
+This collection is maintained by [Nuvibit](https://nuvibit.com) with help from [these amazing contributors](https://github.com/nuvibit/github-terraform-workflows/graphs/contributors)
 
 <!-- LICENSE -->
 ## License
-
 This collection is licensed under Apache 2.0
 <br />
-See [LICENSE][license-url] for full details
+See [LICENSE](https://github.com/nuvibit/github-terraform-workflows/tree/master/LICENSE) for full details
 
 <!-- COPYRIGHT -->
 <br />
 <br />
-<p align="center">Copyright &copy; 2022 Nuvibit AG</p>
-
-<!-- MARKDOWN LINKS & IMAGES -->
-[nuvibit-shield]: https://img.shields.io/badge/maintained%20by-nuvibit.com-%235849a6.svg?style=flat&color=1c83ba
-[nuvibit-url]: https://nuvibit.com
-[release-shield]: https://img.shields.io/github/v/release/nuvibit/cloud-demo-app?style=flat&color=success
-[release-url]: https://github.com/nuvibit/cloud-demo-app/releases
-[contributors-url]: https://github.com/nuvibit/cloud-demo-app/graphs/contributors
-[license-url]: https://github.com/nuvibit/cloud-demo-app/tree/master/LICENSE
+<p align="center">Copyright &copy; Nuvibit AG</p>

@@ -4,11 +4,7 @@ on:
   workflow_call:
     inputs:
       license_file_source_repo:
-        description: 'Repository where license file is stored.'
-        required: true
-        type: string
-      license_file_repo_owner:
-        description: 'Repository owner where license file is stored.'
+        description: 'Repository where license file is stored (needs to be public or in the same Github organization).'
         required: true
         type: string
       license_file_name:
@@ -55,8 +51,10 @@ jobs:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           # if owner and repositories are empty, access will be scoped to only the current repository
-          owner: ${{ inputs.license_file_repo_owner }}
-          repositories: ${{ inputs.license_file_source_repo }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            ${{ inputs.license_file_source_repo }}
+            ${{ github.event.repository.name }}
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,7 +65,7 @@ jobs:
       - name: Checkout License File
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.license_file_repo_owner }}/${{ inputs.license_file_source_repo }}
+          repository: ${{ github.repository_owner }}/${{ inputs.license_file_source_repo }}
           path: remote_repo
           persist-credentials: false
           sparse-checkout: |

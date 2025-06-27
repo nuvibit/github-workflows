@@ -93,7 +93,7 @@ jobs:
         if: steps.sync.outputs.has_changes == 'true'
         run: |
           # Find the CloudFront distribution that has our S3 bucket as origin
-          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[].DomainName, '${{ inputs.domain_name }}.s3.${{ inputs.AWS_DEFAULT_REGION }}.amazonaws.com')].Id" --output text)
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[].DomainName, '${{ inputs.domain_name }}.s3.${{ inputs.aws_default_region }}.amazonaws.com')].Id" --output text)
           
           if [ -z "$DISTRIBUTION_ID" ]; then
             echo "::error::Could not find CloudFront distribution for ${{ inputs.domain_name }}"

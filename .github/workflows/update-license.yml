@@ -16,6 +16,16 @@ on:
         default: "LICENSE"
         required: false
         type: string
+      license_file_private:
+        description: 'If the license file repository is private.'
+        default: false
+        required: false
+        type: boolean
+      company_name:
+        description: 'Company name to use in license header.'
+        default: "Nuvibit AG"
+        required: false
+        type: string
       insert_header_file_extension:
         description: 'File extension of files where license header should be added.'
         default: ".tf"
@@ -32,11 +42,11 @@ on:
         required: false
         type: string
     secrets:
-      # GitHub App credentials to use instead of default GITHUB_TOKEN to avoid not triggering workflow runs on commit
+      # GitHub App credentials to copy license file (only required if license_file_private is true)
       GH_APP_ID:
-        required: true
+        required: false
       GH_APP_PRIVATE_KEY:
-        required: true
+        required: false
 
 jobs:
   license-update:
@@ -45,6 +55,7 @@ jobs:
     steps:
       - name: Get Github Access Token
         id: github_app_token
+        if: ${{ inputs.license_file_private == true }}
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ secrets.GH_APP_ID }}
@@ -68,7 +79,7 @@ jobs:
           sparse-checkout: |
             ${{ inputs.license_file_name }}
           sparse-checkout-cone-mode: false
-          token: ${{ steps.github_app_token.outputs.token }}
+          token: ${{ steps.github_app_token.outputs.token || secrets.GITHUB_TOKEN }}
 
       - name: Update License File
         run: |
@@ -84,7 +95,7 @@ jobs:
             sed -i '/^# Copyright/d' $file
             sed -i '/^# SPDX-License-Identifier/d' $file
             sed -i '/./,$!d' $file
-            sed -i '1s/^/# Copyright (c) Nuvibit AG\n# SPDX-License-Identifier: see terms and conditions in the LICENSE file\n\n/' $file
+            sed -i '1s/^/# Copyright (c) ${{ inputs.company_name }}\n# SPDX-License-Identifier: see terms and conditions in the LICENSE file\n\n/' $file
           done
 
       - name: Commit Changes

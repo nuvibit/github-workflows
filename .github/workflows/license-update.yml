@@ -1,4 +1,4 @@
-name: UPDATE LICENSE
+name: LICENSE UPDATE
 
 on:
   workflow_call:

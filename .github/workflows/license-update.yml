@@ -16,11 +16,6 @@ on:
         default: "LICENSE"
         required: false
         type: string
-      license_file_private:
-        description: 'If the license file repository is private.'
-        default: false
-        required: false
-        type: boolean
       company_name:
         description: 'Company name to use in license header.'
         default: "Nuvibit AG"
@@ -42,11 +37,11 @@ on:
         required: false
         type: string
     secrets:
-      # GitHub App credentials to copy license file (only required if license_file_private is true)
+      # GitHub App credentials to avoid using GITHUB_TOKEN
       GH_APP_ID:
-        required: false
+        required: true
       GH_APP_PRIVATE_KEY:
-        required: false
+        required: true
 
 jobs:
   license-update:
@@ -55,7 +50,6 @@ jobs:
     steps:
       - name: Get Github Access Token
         id: github_app_token
-        if: ${{ inputs.license_file_private == true }}
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ secrets.GH_APP_ID }}
@@ -79,7 +73,7 @@ jobs:
           sparse-checkout: |
             ${{ inputs.license_file_name }}
           sparse-checkout-cone-mode: false
-          token: ${{ steps.github_app_token.outputs.token || secrets.GITHUB_TOKEN }}
+          token: ${{ steps.github_app_token.outputs.token }}
 
       - name: Update License File
         run: |
@@ -114,4 +108,4 @@ jobs:
         uses: ad-m/github-push-action@v0.8.0
         with:
           branch: ${{ github.event.pull_request.head.ref }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.github_app_token.outputs.token }}

@@ -3,6 +3,11 @@ name: NPM FRONTEND DEPLOYMENT
 on:
   workflow_call:
     inputs:
+      node_version:
+        description: 'Node.js version to use for the build (default: lts/*)'
+        default: 'lts/*'
+        required: false
+        type: string
       aws_default_region:
         description: 'AWS region to use for deployment (default: eu-central-1)'
         default: 'eu-central-1'
@@ -49,7 +54,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/Jod
+          node-version: ${{ inputs.node_version }}
 
       - name: Install dependencies
         run: npm install

@@ -8,6 +8,16 @@ on:
         default: "."
         required: false
         type: string
+      commit_user:
+        description: 'Username which should be used for commits by github action'
+        default: 'github-actions'
+        required: false
+        type: string
+      commit_email:
+        description: 'Email which should be used for commits by github action'
+        default: 'noreply@github.com'
+        required: false
+        type: string
 
 concurrency:
   group: drawio-export-${{ github.ref }}
@@ -35,15 +45,20 @@ jobs:
           quality: 95
           uncompressed: true
 
-      - name: Get author and committer info from HEAD commit
-        uses: rlespinasse/git-commit-data-action@v1.x
-        if: github.ref == 'refs/heads/main'
+      - name: Commit Changes
+        run: |
+          git config --local user.name "${{ inputs.commit_user }}"
+          git config --local user.email "${{ inputs.commit_email }}"
+          git add .
+          if [[ -z $(git status -s) ]]; then
+            echo "diff=false" >> $GITHUB_OUTPUT
+          else
+            echo "diff=true" >> $GITHUB_OUTPUT
+          fi
+          git diff-index --quiet HEAD || git commit -m "docs: sync draw.io exported files" -a
 
-      - name: Commit changed files
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Push Changes
+        uses: ad-m/github-push-action@v0.8.0
         with:
-          commit_message: "docs: sync draw.io exported files"
-          commit_user_name: "${{ env.GIT_COMMIT_COMMITTER_NAME }}"
-          commit_user_email: "${{ env.GIT_COMMIT_COMMITTER_EMAIL }}"
-          commit_author: "${{ env.GIT_COMMIT_AUTHOR }}"
-        if: github.ref == 'refs/heads/main'
+          github_token: ${{ steps.github_app_token.outputs.token }}
+          branch: ${{ github.ref }}

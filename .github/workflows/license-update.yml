@@ -57,13 +57,13 @@ jobs:
             ${{ github.event.repository.name }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ steps.github_app_token.outputs.token }}
 
       - name: Checkout License File
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ github.repository_owner }}/${{ inputs.license_file_source_repo }}
           path: remote_repo

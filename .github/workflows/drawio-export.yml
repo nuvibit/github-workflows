@@ -34,8 +34,8 @@ jobs:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           # if owner and repositories are empty, access will be scoped to only the current repository
-          # owner: ''
-          # repositories: ''
+          owner: ''
+          repositories: ''
 
       - name: Checkout sources
         uses: actions/checkout@v4

@@ -28,6 +28,11 @@ on:
         default: false
         required: false
         type: boolean
+      drawio_action_mode:
+        description: 'Action mode to use for drawio-export-action (default: "all")'
+        default: 'all'
+        required: false
+        type: string
       commit_user:
         description: 'Username which should be used for commits by github action'
         default: 'github-actions'
@@ -84,7 +89,7 @@ jobs:
           output: ${{ inputs.drawio_png_format_export_path }}
           format: png
           transparent: false
-          action-mode: all
+          action-mode: ${{ inputs.drawio_action_mode }}
           remove-page-suffix: true
           scale: 2
           quality: 95
@@ -98,7 +103,7 @@ jobs:
           output: ${{ inputs.drawio_svg_format_export_path }}
           format: png
           transparent: false
-          action-mode: all
+          action-mode: ${{ inputs.drawio_action_mode }}
           remove-page-suffix: true
           scale: 2
           quality: 95

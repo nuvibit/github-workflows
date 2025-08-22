@@ -27,6 +27,12 @@ jobs:
   drawio-export:
     runs-on: ubuntu-latest
     steps:
+      - name: Make Sure Required 'GH_APP_ID' and 'GH_APP_PRIVATE_KEY' Secrets are Available
+        if: ${{ !secrets.GH_APP_ID || !secrets.GH_APP_PRIVATE_KEY }}
+        run: |
+          echo "Error: Required secrets 'GH_APP_ID' and 'GH_APP_PRIVATE_KEY' are not set."
+          exit 1
+
       - name: Get Github Access Token
         id: github_app_token
         uses: actions/create-github-app-token@v2

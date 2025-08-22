@@ -101,7 +101,7 @@ jobs:
         with:
           path: ${{ inputs.drawio_path }}
           output: ${{ inputs.drawio_svg_format_export_path }}
-          format: png
+          format: svg
           transparent: false
           action-mode: ${{ inputs.drawio_action_mode }}
           remove-page-suffix: true

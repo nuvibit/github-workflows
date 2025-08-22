@@ -8,6 +8,26 @@ on:
         default: "."
         required: false
         type: string
+      drawio_png_format_export_path:
+        description: 'Path where png files should be exported (relative to drawio_path)'
+        type: string
+        required: false
+        default: "export"
+      drawio_svg_format_export_path:
+        description: 'Path where svg files should be exported (relative to drawio_path). If empty, no svg files will be exported.'
+        default: "export/svg"
+        required: false
+        type: string
+      drawio_export_as_png:
+        description: 'Export drawio files as png'
+        default: true
+        required: false
+        type: boolean
+      drawio_export_as_svg:
+        description: 'Export drawio files as svg'
+        default: false
+        required: false
+        type: boolean
       commit_user:
         description: 'Username which should be used for commits by github action'
         default: 'github-actions'
@@ -58,8 +78,24 @@ jobs:
 
       - name: Export drawio files to asciidoctor and png files
         uses: rlespinasse/drawio-export-action@v2
+        if: ${{ inputs.drawio_export_as_png == true }}
         with:
           path: ${{ inputs.drawio_path }}
+          output: ${{ inputs.drawio_png_format_export_path }}
+          format: png
+          transparent: false
+          action-mode: all
+          remove-page-suffix: true
+          scale: 2
+          quality: 95
+          uncompressed: true
+
+      - name: Export drawio files to svg files
+        uses: rlespinasse/drawio-export-action@v2
+        if: ${{ inputs.drawio_export_as_svg == true }}
+        with:
+          path: ${{ inputs.drawio_path }}
+          output: ${{ inputs.drawio_svg_format_export_path }}
           format: png
           transparent: false
           action-mode: all

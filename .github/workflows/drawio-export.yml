@@ -33,6 +33,11 @@ on:
         default: 'all'
         required: false
         type: string
+      consolidate_exported_files_to_single_location:
+        description: 'If true, all exported files will be consolidated to a single location at the root level (exports/png and exports/svg). If false, exported files will remain in their respective subdirectories.'
+        default: false
+        required: false
+        type: boolean
       commit_user:
         description: 'Username which should be used for commits by github action'
         default: 'github-actions'
@@ -43,6 +48,7 @@ on:
         default: 'noreply@github.com'
         required: false
         type: string
+
     secrets:
       GH_APP_ID:
         required: true
@@ -109,7 +115,52 @@ jobs:
           quality: 95
           uncompressed: true
 
+      - name: Consolidate exported files to root level
+        if: ${{ inputs.consolidate_exported_files_to_single_location == true }}
+        run: |
+          #!/bin/bash
+          
+          SEARCH_PATH="drawio"
+          FINAL_EXPORTS_PATH="exports"
+          mkdir -p "${FINAL_EXPORTS_PATH}"
+          
+          echo "Consolidating exported files into '${FINAL_EXPORTS_PATH}'..."
+          
+          find "${SEARCH_PATH}" -type d -name "exports" | while read -r nested_dir; do
+            # For a path like "drawio/subfolder/subsubfolder/exports", this gets the parent
+            parent_dir=$(dirname "${nested_dir}")
+          
+            # This extracts the full relative path from the search path, 
+            # e.g., "subfolder/subsubfolder"
+            relative_path="${parent_dir#${SEARCH_PATH}/}"
+          
+            echo "Processing exports from: ${relative_path}"
+          
+            # --- Move PNG files ---
+            if [ -d "${nested_dir}/png" ] && [ -n "$(ls -A "${nested_dir}/png")" ]; then
+              # The destination now includes the full relative path
+              final_png_dest="${FINAL_EXPORTS_PATH}/${relative_path}/png"
+              sudo mkdir -p "${final_png_dest}"
+              echo "  -> Moving PNGs to ${final_png_dest}/"
+              sudo mv "${nested_dir}/png"/* "${final_png_dest}/"
+            fi
+          
+            # --- Move SVG files ---
+            if [ -d "${nested_dir}/svg" ] && [ -n "$(ls -A "${nested_dir}/svg")" ]; then
+              final_svg_dest="${FINAL_EXPORTS_PATH}/${relative_path}/svg"
+              sudo mkdir -p "${final_svg_dest}"
+              echo "  -> Moving SVGs to ${final_svg_dest}/"
+              sudo mv "${nested_dir}/svg"/* "${final_svg_dest}/"
+            fi
+          
+            echo "  -> Cleaning up ${nested_dir}"
+            sudo rm -rf "${nested_dir}"
+          done
+          
+          echo "Consolidation complete!"
+
       - name: Commit Changes
+        id: commit_changes
         run: |
           git config --local user.name "${{ inputs.commit_user }}"
           git config --local user.email "${{ inputs.commit_email }}"
@@ -122,6 +173,7 @@ jobs:
           git diff-index --quiet HEAD || git commit -m "docs: sync draw.io exported files" -a
 
       - name: Push Changes
+        id: push_changes
         uses: ad-m/github-push-action@v0.8.0
         with:
           github_token: ${{ steps.github_app_token.outputs.token }}

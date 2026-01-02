@@ -93,6 +93,7 @@ jobs:
       local_build_dir: "build"
       s3_deployment_dir: "build"
       cloudfront_invalidate_paths: "ALL"
+      skip_cloudfront: false
 ```
 
 ### Draw.io Export Workflow

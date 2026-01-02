@@ -32,13 +32,17 @@ on:
         required: false
         type: string
       cloudfront_invalidate_paths:
-        description: 'Paths to invalidate in CloudFront after deployment (ALL, UPDATED, NONE)'
-        required: true
+        description: 'Paths to invalidate in CloudFront after deployment (ALL, UPDATED)'
+        required: false
         type: string
         # ALL: Invalidate all paths (default)
         # UPDATED: Invalidate only paths that were updated
-        # NONE: Do not invalidate any paths
         default: 'ALL'
+      skip_cloudfront:
+        description: 'Skip all CloudFront operations (only deploy to S3)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   npm-frontend-deploy:
@@ -47,6 +51,12 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    outputs:
+      deployment_status: ${{ steps.summary.outputs.status }}
+      s3_bucket: ${{ inputs.domain_name }}
+      cloudfront_distribution: ${{ steps.cloudfront.outputs.distribution_id }}
+      files_changed: ${{ steps.sync.outputs.has_changes }}
+      invalidation_type: ${{ inputs.cloudfront_invalidate_paths }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -95,21 +105,21 @@ jobs:
 
       - name: Find CloudFront distribution ID
         id: cloudfront
-        if: steps.sync.outputs.has_changes == 'true'
+        if: steps.sync.outputs.has_changes == 'true' && inputs.skip_cloudfront != true
         run: |
           # Find the CloudFront distribution that has our S3 bucket as origin
           DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[].DomainName, '${{ inputs.domain_name }}.s3.${{ inputs.aws_default_region }}.amazonaws.com')].Id" --output text)
           
           if [ -z "$DISTRIBUTION_ID" ]; then
-            echo "::error::Could not find CloudFront distribution for ${{ inputs.domain_name }}"
-            exit 1
+            echo "::warning::Could not find CloudFront distribution for ${{ inputs.domain_name }}"
+            echo "distribution_id=" >> $GITHUB_OUTPUT
+          else
+            echo "Found CloudFront distribution: $DISTRIBUTION_ID"
+            echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
           fi
-          
-          echo "Found CloudFront distribution: $DISTRIBUTION_ID"
-          echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
 
       - name: Invalidate CloudFront cache for ALL PATHS
-        if: steps.sync.outputs.has_changes == 'true' && inputs.cloudfront_invalidate_paths == 'ALL'
+        if: steps.sync.outputs.has_changes == 'true' && inputs.skip_cloudfront != true && inputs.cloudfront_invalidate_paths == 'ALL' && steps.cloudfront.outputs.distribution_id != ''
         run: |
           # Create CloudFront invalidation for all paths
           DISTRIBUTION_ID=${{ steps.cloudfront.outputs.distribution_id }}
@@ -118,7 +128,7 @@ jobs:
           aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
 
       - name: Invalidate CloudFront cache for UPDATED PATHS
-        if: steps.sync.outputs.has_changes == 'true' && inputs.cloudfront_invalidate_paths == 'UPDATED'
+        if: steps.sync.outputs.has_changes == 'true' && inputs.skip_cloudfront != true && inputs.cloudfront_invalidate_paths == 'UPDATED' && steps.cloudfront.outputs.distribution_id != ''
         run: |
           # Create CloudFront invalidation for the paths that were updated
           PATHS=${{ toJSON(steps.sync.outputs.paths_json) }}
@@ -128,3 +138,61 @@ jobs:
           echo "{\"Paths\": {\"Quantity\": $(echo $PATHS | jq length), \"Items\": $PATHS}, \"CallerReference\": \"$(date +%s)\"}" > inv-batch.json
           echo "Creating CloudFront invalidation for paths: $PATHS"
           aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --invalidation-batch file://inv-batch.json
+
+      - name: Deployment Summary
+        id: summary
+        if: always()
+        run: |
+          echo "## 🚀 Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 Domain | \`${{ inputs.domain_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 S3 Path | \`s3://${{ inputs.domain_name }}/${{ inputs.s3_deployment_dir }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📁 Build Dir | \`${{ inputs.local_build_dir }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔄 Files Changed | ${{ steps.sync.outputs.has_changes == 'true' && '✅ Yes' || '❌ No' }} |" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ inputs.skip_cloudfront }}" == "true" ]; then
+            echo "| ☁️ CloudFront | ⏭️ Skipped (S3 only mode) |" >> $GITHUB_STEP_SUMMARY
+          elif [ -n "${{ steps.cloudfront.outputs.distribution_id }}" ]; then
+            echo "| ☁️ CloudFront ID | \`${{ steps.cloudfront.outputs.distribution_id }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔄 Invalidation | ${{ inputs.cloudfront_invalidate_paths }} |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| ☁️ CloudFront | ⚠️ Not found |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Deployment completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          echo "status=success" >> $GITHUB_OUTPUT
+
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: npm-frontend-deploy
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## 📊 Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.npm-frontend-deploy.result }}" == "success" ]; then
+            echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Domain:** \`${{ needs.npm-frontend-deploy.outputs.s3_bucket }}\`" >> $GITHUB_STEP_SUMMARY
+            
+            if [ -n "${{ needs.npm-frontend-deploy.outputs.cloudfront_distribution }}" ]; then
+              echo "**CloudFront:** \`${{ needs.npm-frontend-deploy.outputs.cloudfront_distribution }}\`" >> $GITHUB_STEP_SUMMARY
+              echo "**Cache Invalidation:** ${{ needs.npm-frontend-deploy.outputs.invalidation_type }}" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "**CloudFront:** Skipped or not configured" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🎉 Your frontend has been deployed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the job logs for details." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi

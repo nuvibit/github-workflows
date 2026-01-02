@@ -67,7 +67,7 @@ jobs:
 **Features**:
 - NPM build process
 - S3 sync with change tracking
-- CloudFront cache invalidation (configurable: ALL, UPDATED, NONE)
+- CloudFront cache invalidation (configurable: ALL, UPDATED)
 - OIDC authentication with AWS
 - Automatic CloudFront distribution detection
 

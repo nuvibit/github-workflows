@@ -58,7 +58,7 @@ jobs:
           git diff-index --quiet HEAD || git commit -m "docs: sync draw.io exported files" -a
 
       - name: Push Changes
-        uses: ad-m/github-push-action@v0.8.0
+        uses: ad-m/github-push-action@v1.0.0
         with:
           github_token: ${{ steps.github_app_token.outputs.token }}
           branch: ${{ github.ref }}

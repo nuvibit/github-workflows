@@ -28,13 +28,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Export drawio files to asciidoctor and png files
-        uses: rlespinasse/drawio-export-action@v2
+        uses: rlespinasse/drawio-export-action@6900c4d8a1fb066e0a0a3570574439487546feab # v2
         with:
           path: ${{ inputs.drawio_path }}
           format: png
@@ -58,7 +58,7 @@ jobs:
           git diff-index --quiet HEAD || git commit -m "docs: sync draw.io exported files" -a
 
       - name: Push Changes
-        uses: ad-m/github-push-action@v0.8.0
+        uses: ad-m/github-push-action@881a6320fdb16eb5318c5054f31c218aec2b324c # v1
         with:
           github_token: ${{ steps.github_app_token.outputs.token }}
           branch: ${{ github.ref }}

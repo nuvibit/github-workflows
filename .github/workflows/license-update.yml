@@ -46,7 +46,7 @@ jobs:
     steps:
       - name: Get Github Access Token
         id: github_app_token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -57,13 +57,13 @@ jobs:
             ${{ github.event.repository.name }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ steps.github_app_token.outputs.token }}
 
       - name: Checkout License File
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: ${{ github.repository_owner }}/${{ inputs.license_file_source_repo }}
           path: remote_repo
@@ -103,7 +103,7 @@ jobs:
           git diff-index --quiet HEAD || git commit -m "chore: update license" -a
 
       - name: Push Changes
-        uses: ad-m/github-push-action@v0.8.0
+        uses: ad-m/github-push-action@881a6320fdb16eb5318c5054f31c218aec2b324c # v1
         with:
           github_token: ${{ steps.github_app_token.outputs.token }}
           branch: ${{ github.event.pull_request.head.ref }}

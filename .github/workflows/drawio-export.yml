@@ -34,7 +34,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Export drawio files to asciidoctor and png files
-        uses: rlespinasse/drawio-export-action@6900c4d8a1fb066e0a0a3570574439487546feab # v2
+        uses: rlespinasse/drawio-export-action@711aa4f0ebbee18099c3ed8911819128b23eee21 # v2
         with:
           path: ${{ inputs.drawio_path }}
           format: png

@@ -3,6 +3,11 @@ name: NPM FRONTEND DEPLOYMENT
 on:
   workflow_call:
     inputs:
+      working_directory:
+        description: 'Directory containing package.json, relative to the repository root. All run steps execute here and local_build_dir is resolved relative to it (default: .)'
+        default: '.'
+        required: false
+        type: string
       node_version:
         description: 'Node.js version to use for the build (default: lts/*)'
         default: 'lts/*'
@@ -57,6 +62,9 @@ jobs:
       cloudfront_distribution: ${{ steps.cloudfront.outputs.distribution_id }}
       files_changed: ${{ steps.sync.outputs.has_changes }}
       invalidation_type: ${{ inputs.cloudfront_invalidate_paths }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -149,6 +157,7 @@ jobs:
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| 🌐 Domain | \`${{ inputs.domain_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 📦 S3 Path | \`s3://${{ inputs.domain_name }}/${{ inputs.s3_deployment_dir }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📂 Working Dir | \`${{ inputs.working_directory }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 📁 Build Dir | \`${{ inputs.local_build_dir }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔄 Files Changed | ${{ steps.sync.outputs.has_changes == 'true' && '✅ Yes' || '❌ No' }} |" >> $GITHUB_STEP_SUMMARY
           

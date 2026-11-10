@@ -70,6 +70,7 @@ jobs:
 - CloudFront cache invalidation (configurable: ALL, UPDATED)
 - OIDC authentication with AWS
 - Automatic CloudFront distribution detection
+- Optional `working_directory` for projects not located at the repository root
 
 **Usage**:
 ```yaml
@@ -90,7 +91,8 @@ jobs:
       aws_default_region: "eu-central-1"
       aws_oidc_role_arn: "arn:aws:iam::ACCOUNT:role/oidc-deployment-role"
       domain_name: "docs.nuvibit.com"
-      local_build_dir: "build"
+      working_directory: "."      # directory containing package.json (e.g. a subdirectory in a monorepo)
+      local_build_dir: "build"    # relative to working_directory
       s3_deployment_dir: "build"
       cloudfront_invalidate_paths: "ALL"
       skip_cloudfront: false
